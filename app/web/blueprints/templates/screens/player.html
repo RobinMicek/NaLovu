@@ -1,0 +1,233 @@
+<!--
+********************************************************
+
+    Tento kód je součástí projektu 'Na Lovu'.
+
+    Gymnázium Sokolov a Krajské vzdělávací centrum,
+    příspěvková organizace
+
+    Robin Míček, 8.E
+
+********************************************************
+-->
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Top Bar -->
+{% with screenName="Lovec" if role == "chaser" else "Hráč" %}
+    {% include 'topbar.html' %}
+{% endwith %}
+
+<style>
+    button:disabled {
+        pointer-events: none;
+        filter: brightness(50%);
+    }
+</style>
+
+<script>
+    let role = "{{ role }}"
+    let currentState = "{{ config.currentState }}"
+    let selectedAnswerType = "D"
+
+    let controlButton = [
+        "answerA",
+        "answerB",
+        "answerC",
+        "answerD"
+    ]
+</script>
+
+
+<div id="questionDiv" class="flex flex-col h-screen w-screen justify-center items-center hidden">
+
+    
+    <!-- Countdown -->
+    <div id="countdownDiv" class="absolute mt-32 m-10 top-0 right-0 size-20">
+        <svg class="size-full" width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+        
+        <circle cx="18" cy="18" r="16" fill="none" class="stroke-secondary_dark text-secondary_dark" stroke-width="2"></circle>
+        
+        <g class="origin-center -rotate-90 transform">
+            <circle id="countdownProgress" cx="18" cy="18" r="16" fill="none" class="stroke-secondary text-secondary" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="0" ></circle>
+        </g>
+        </svg>
+        
+        <div class="absolute top-1/2 start-1/2 transform -translate-y-1/2 -translate-x-1/2">
+            <span id="countdownText" class="text-center text-2xl font-bold text-gray-800 dark:text-white">{{ config.answerTime }}</span>
+        </div>
+    </div>
+    
+    <script>
+        function answerCountdown (seconds) {
+            let count = 1
+            const countdownTextElement = document.getElementById("countdownText")
+            const countdownProgressElement = document.getElementById("countdownProgress")
+            let intervalId
+            
+            
+            intervalId = setInterval(
+                (e) => {
+                    countdownTextElement.innerText = seconds - count
+                    countdownProgressElement.style.strokeDashoffset = Math.round(((count / seconds) * 100), 2)
+                    count++
+                    if (count > seconds) {
+                        document.getElementById("countdownDiv").classList.add("hidden")
+                        clearInterval(intervalId)                    
+                        countdownTextElement.innerText = "{{ config.answerTime }}"
+                        countdownProgressElement.style.strokeDashoffset = 0
+                    }
+                }, 1000
+            )
+        }        
+    </script>
+
+
+    <h1 id="questionText" class="m-10 text-4xl text-center font-semibold"></h1>
+
+
+    <script>
+        async function pickAnswer (pickedAnswer) {
+            const response = await fetch(`/func/pick-answer?role=${role}&pickedAnswer=${pickedAnswer}`)    
+            
+            controlButton.forEach(button => {
+                document.getElementById(button).disabled = true
+            })
+
+            document.getElementById(`answer${pickedAnswer}`).classList.remove("bg-secondary")
+            document.getElementById(`answer${pickedAnswer}`).classList.remove("border-2")
+            document.getElementById(`answer${pickedAnswer}`).classList.add("bg-yellow-500")
+        }
+    </script>
+
+    <div class="grid grid-cols-2 gap-3 mt-3 px-12 w-full">
+        <button id="answerA" onclick="pickAnswer('A')" type="button" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary hover:bg-primary p-5 py-10 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">A</span>                    
+            </span>
+        </button>  
+
+        <button id="answerB" onclick="pickAnswer('B')" type="button" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary hover:bg-primary p-5 py-10 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">B</span>                    
+            </span>     
+        </button>  
+
+        <button id="answerC" onclick="pickAnswer('C')" type="button" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary hover:bg-primary p-5 py-10 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">C</span>                    
+            </span>
+        </button>  
+
+        <button id="answerD" onclick="pickAnswer('D')" type="button" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary hover:bg-primary p-5 py-10 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">D</span>
+                Nechci odpovídat
+            </span>
+        </button>  
+
+    </div>
+  </div>
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const host = window.location.host
+    
+    let protocol = `ws://`
+    if (window.location.protocol === "https:") {
+        protocol = `wss://`
+    }
+
+    const socket = io(`${protocol}${host}`)
+    
+    // Listen for messages from the server
+    socket.on('INTRO', (message) => {
+        currentState = "INTRO"
+
+        document.getElementById("questionDiv").classList.add("hidden")
+        
+    })
+
+    socket.on('GUESS', (message) => {
+        currentState = "GUESS"
+        question = JSON.parse(message.data).question
+
+        document.getElementById("questionText").innerText = question.text
+        
+        for (let x = 0; x < question.answers.length; x++) {
+            document.getElementById(`answer${question.answers[x].type}`).innerHTML = `
+                <span class="text-2xl">
+                    <span class="font-bold text-red-500">${question.answers[x].type}</span>
+                    ${question.answers[x].text}
+                </span>
+            `
+        }
+
+        controlButton.forEach(button => {
+            document.getElementById(button).disabled = true
+        })
+
+        document.getElementById("questionDiv").classList.remove("hidden")
+        document.getElementById("countdownDiv").classList.remove("hidden")
+
+        
+    })
+
+    
+    socket.on('guessStart', (message) => {
+        
+        // Start the countdown
+        answerCountdown("{{ config.answerTime }}")
+
+        controlButton.forEach(button => {
+            document.getElementById(button).disabled = false
+        })
+
+        // Start the countdown timer
+        answerCountdown("{{ config.answerTime }}")
+        
+    })
+
+    
+    socket.on('SHOW', (message) => {
+        currentState = "SHOW"
+
+        controlButton.forEach(button => {
+            document.getElementById(button).disabled = true
+        })
+        
+    })
+
+
+    socket.on('END', async (message) => {
+        currentState = "END"
+
+        controlButton.forEach(button => {
+            document.getElementById(button).classList.add("bg-secondary")
+            document.getElementById(button).classList.add("border-2")
+            document.getElementById(button).classList.remove("bg-yellow-500")
+        })
+        
+    })
+
+
+    // Reload
+    socket.on('reloadScreens', (message) => {
+        location.reload()
+    })
+
+
+    // Error
+    socket.on('connect_error', (error) => {
+        console.error('Socket.io connection error:', error)
+        alert('Socket.io connection error')
+    })
+</script>
+
+{% endblock %}

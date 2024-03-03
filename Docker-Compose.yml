@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+
+  nalovu:
+    container_name: NaLovu
+    build: .
+    restart: always
+    ports:
+      - 8080:8080
+    command: python3 ./app/web/app.py
+    volumes:
+      - ./app/database:/nalovu/app/database

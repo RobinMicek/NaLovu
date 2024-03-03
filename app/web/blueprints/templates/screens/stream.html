@@ -1,0 +1,287 @@
+<!--
+********************************************************
+
+    Tento kód je součástí projektu 'Na Lovu'.
+
+    Gymnázium Sokolov a Krajské vzdělávací centrum,
+    příspěvková organizace
+
+    Robin Míček, 8.E
+
+********************************************************
+-->
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    button:disabled {
+        pointer-events: none;
+        filter: brightness(50%);
+    }
+</style>
+
+<script>
+    let currentState = "{{ config.currentState }}"
+    let playerAnswer
+    let chaserAnswer
+    let correctAnswerType    
+
+    // Sound effects
+    const soundEffectAnswerPlayer = new Audio("/files/media/sounds/answerPlayer.mp3")
+    const soundEffectAnswerChaser = new Audio("/files/media/sounds/answerChaser.mp3")
+    const soundEffectAnswerCorrect = new Audio("/files/media/sounds/answerCorrect.mp3")
+    const soundEffectTimer = new Audio("/files/media/sounds/timer.mp3")
+    soundEffectTimer.loop = true
+</script>
+
+
+<div id="questionDiv" class="flex flex-col h-screen w-screen justify-center items-center p-5">
+
+    <!-- Heading -->
+    <div class="grid grid-cols-3 rounded-t-md bg-yellow-500 w-full py-2 px-4">
+        
+        <div class="col-span-1 text-left">
+            <h1 class="text-2xl font-bold">{% for player in players %} {% if player.role == "player" %} {{ player.name }} {% endif %} {% endfor %}</h1>
+            <h2 class="font-semibold">Hráč</h2>          
+        </div>
+        
+        <div class="col-span-1">
+            <h1 class="p-1 text-4xl text-center font-bold">Na Lovu</h1>
+        </div>
+
+        <div class="col-span-1 text-right">
+            <h1 class="text-2xl font-bold">{% for player in players %} {% if player.role == "chaser" %} {{ player.name }} {% endif %} {% endfor %}</h1>
+            <h2 class="font-semibold">Lovec</h2>
+        </div>
+    </div>
+
+
+    <div class="relative h-32 rounded-b-md border-4 border-t-0 border-yellow-500 w-full">
+        <!-- Countdown -->
+        <div id="countdownDiv" class="absolute top-0 right-0 m-5 size-20 hidden">
+            <svg class="size-full" width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+            
+            <circle cx="18" cy="18" r="16" fill="none" class="stroke- text-secondary_dark" stroke-width="2"></circle>
+            
+            <g class="origin-center -rotate-90 transform">
+                <circle id="countdownProgress" cx="18" cy="18" r="16" fill="none" class="stroke-red-500 text-red-500" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="0" ></circle>
+            </g>
+            </svg>
+            
+            <div class="absolute top-1/2 start-1/2 transform -translate-y-1/2 -translate-x-1/2">
+                <span id="countdownText" class="text-center text-2xl font-bold text-gray-800 dark:text-white">{{ config.answerTime }}</span>
+            </div>
+        </div>
+        <script>
+            function answerCountdown (seconds) {
+                soundEffectTimer.play()
+
+                let count = 1
+                const countdownTextElement = document.getElementById("countdownText")
+                const countdownProgressElement = document.getElementById("countdownProgress")
+                let intervalId
+
+                
+                intervalId = setInterval(
+                    (e) => {
+                        countdownTextElement.innerText = seconds - count
+                        countdownProgressElement.style.strokeDashoffset = Math.round(((count / seconds) * 100), 2)
+                        count++
+                        if (count > seconds) {
+                            soundEffectTimer.pause()
+                            soundEffectTimer.load()
+
+                            document.getElementById("countdownDiv").classList.add("hidden")
+                            clearInterval(intervalId)                    
+                            countdownTextElement.innerText = "{{ config.answerTime }}"
+                            countdownProgressElement.style.strokeDashoffset = 0
+                        }
+                    }, 1000
+                )
+            }        
+        </script>
+
+    
+        <h1 id="questionText" class="m-10 px-16 text-4xl text-center font-semibold"></h1>
+    </div>
+
+
+    <div class="grid grid-cols-2 gap-3 mt-3 w-full">
+        <div id="answerDivA" type="button" class="col-span-1 flex w-full items-center text-left gap-x-2 border-4 border-red-500 p-5 h-28 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">A</span>
+                <span id="answerTextA"></span>
+            </span>
+
+            <div class="text-2xl flex-grow text-right justify-end">
+                <p id="answerPlayerA"></p>
+                <p id="answerChaserA"></p>
+            </div>            
+        </div>   
+
+        <div id="answerDivB" type="button" class="col-span-1 flex w-full items-center text-left gap-x-2 border-4 border-red-500 p-5 h-28 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">B</span>
+                <span id="answerTextB"></span>
+            </span>
+
+            <div class="text-2xl flex-grow text-right justify-end">
+                <p id="answerPlayerB"></p>
+                <p id="answerChaserB"></p>
+            </div>            
+        </div>    
+
+        <div id="answerDivC" type="button" class="col-span-1 flex w-full items-center text-left gap-x-2 border-4 border-red-500 p-5 h-28 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">C</span>
+                <span id="answerTextC"></span>
+            </span>
+
+            <div class="text-2xl flex-grow text-right justify-end">
+                <p id="answerPlayerC"></p>
+                <p id="answerChaserC"></p>
+            </div>            
+        </div>  
+
+        <div id="answerDivD" type="button" class="col-span-1 flex w-full items-center text-left gap-x-2 border-4 border-red-500 p-5 h-28 w-full rounded-md font-semibold">
+            <span class="text-2xl">
+                <span class="font-bold text-red-500">D</span>
+                <span id="answerTextD"></span>
+            </span>
+
+            <div class="text-2xl flex-grow text-right justify-end">
+                <p id="answerPlayerD"></p>
+                <p id="answerChaserD"></p>
+            </div>            
+        </div>    
+
+    </div>
+  </div>
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const host = window.location.host
+    
+    let protocol = `ws://`
+    if (window.location.protocol === "https:") {
+        protocol = `wss://`
+    }
+
+    const socket = io(`${protocol}${host}`)
+    
+    // Listen for messages from the server
+    socket.on('INTRO', (message) => {
+        currentState = "INTRO"
+        
+    })
+
+    socket.on('GUESS', (message) => {
+        currentState = "GUESS"
+        question = JSON.parse(message.data).question
+
+        document.getElementById("questionText").innerText = question.text
+        
+        for (let x = 0; x < question["answers"].length; x++) {
+            document.getElementById(`answerText${question["answers"][x].type}`).innerText = `${question["answers"][x].text}`
+
+            if ((question.correctAnswerId == question["answers"][x].answerId)) {
+                correctAnswerType = question["answers"][x].type
+            }
+        }
+        document.getElementById(`answerTextD`).innerText = `Nechci odpovídat`
+
+        document.getElementById("questionDiv").classList.remove("hidden")
+        document.getElementById("countdownDiv").classList.remove("hidden")
+
+        
+    })
+
+    
+    socket.on('guessStart', (message) => {
+        
+        // Start the countdown
+        answerCountdown("{{ config.answerTime }}")
+
+        // Start the countdown timer
+        answerCountdown("{{ config.answerTime }}")
+        
+    })
+
+    
+    socket.on('SHOW', (message) => {
+        currentState = "SHOW"        
+        question = JSON.parse(message.data).question
+
+        const playerAnswers = JSON.parse(message.data).playerAnswers
+
+        for (let x = 0; x < playerAnswers.length; x++) {
+            if (playerAnswers[x].role == "chaser") {
+                chaserAnswer = playerAnswers[x]    
+            } else {
+                playerAnswer = playerAnswers[x]
+            }
+        }
+        
+    })
+
+
+    socket.on('showAnswer-player', (message) => {    
+        soundEffectAnswerPlayer.play()
+        document.getElementById(`answerPlayer${playerAnswer.pickedAns}`).innerText = "Hráč"
+        document.getElementById(`answerPlayer${playerAnswer.pickedAns}`).classList.add("showAnswerAnimation")
+    })
+
+    socket.on('showAnswer-chaser', (message) => {    
+        soundEffectAnswerChaser.play()
+        document.getElementById(`answerChaser${chaserAnswer.pickedAns}`).innerText = "Lovec"
+        document.getElementById(`answerChaser${chaserAnswer.pickedAns}`).classList.add("showAnswerAnimation")
+    })
+
+    socket.on('showAnswer-correct', (message) => {   
+        soundEffectAnswerCorrect.play()
+        document.getElementById(`answerDiv${correctAnswerType}`).classList.add("bg-green-500", "showAnswerAnimation")
+    })
+
+
+
+
+
+    socket.on('END', async (message) => {
+        currentState = "END"
+
+        // Clear elements
+        document.getElementById(`questionText`).innerText = ""
+
+        let answerLetters = ["A", "B", "C", "D"]
+        for (let x = 0; x < answerLetters.length; x++) {
+            document.getElementById(`answerDiv${answerLetters[x]}`).classList.remove("bg-green-500", "showAnswerAnimation")
+            document.getElementById(`answerText${answerLetters[x]}`).innerText = ""
+            document.getElementById(`answerPlayer${answerLetters[x]}`).innerText = ""
+            document.getElementById(`answerPlayer${playerAnswer.pickedAns}`).classList.remove("showAnswerAnimation")
+            document.getElementById(`answerChaser${answerLetters[x]}`).innerText = ""
+            document.getElementById(`answerChaser${chaserAnswer.pickedAns}`).classList.remove("showAnswerAnimation")
+        }
+        
+    })
+
+
+    // Reload
+    socket.on('reloadScreens', (message) => {
+        location.reload()
+    })
+
+
+    // Error
+    socket.on('connect_error', (error) => {
+        console.error('Socket.io connection error:', error)
+        alert('Socket.io connection error')
+    })
+</script>
+
+{% endblock %}

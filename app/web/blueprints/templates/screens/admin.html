@@ -1,0 +1,408 @@
+<!--
+********************************************************
+
+    Tento kód je součástí projektu 'Na Lovu'.
+
+    Gymnázium Sokolov a Krajské vzdělávací centrum,
+    příspěvková organizace
+
+    Robin Míček, 8.E
+
+********************************************************
+-->
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Top Bar -->
+{% with screenName="Administrace", linkHome="True" %}
+    {% include 'topbar.html' %}
+{% endwith %}
+
+
+<style>
+    button:disabled {
+        pointer-events: none;
+        filter: brightness(50%);
+    }
+</style>
+
+<script>
+    let currentState = "{{ config.currentState }}"
+    let selectedQuestionId = 0
+
+</script>
+
+
+<div class="grid grid-cols-2 pt-20 h-screen">
+
+    <!-- QUESTIONS -->
+    <div class="col-span-1">
+        
+        <script>
+        
+            async function getQuestions () {
+                const response = await fetch("/func/get-questions")
+                const data = await response.json()
+        
+                let html = ""
+                let firstQuestion = true
+                data.forEach(question => {
+                    html += `
+                        <label class="question border-2 border-secondary ${ firstQuestion ? "bg-secondary" : ""} rounded-md p-3 m-3 flex items-center cursor-pointer">
+                            <input type="radio" name="question" value="${question.questionId}" hidden>
+                            <p class="font-bold pr-2">${question.questionId}.</p>
+                            <p>${question.text} <span class="font-semibold">${question.correctAnswer}</span></p>
+                        </label>
+                    `
+
+                    if (firstQuestion) firstQuestion = false, selectedQuestionId = question.questionId
+                })
+                
+                document.getElementById("allQuestion").innerHTML = html
+                // Add event listeners to question divs
+                const radioInputs = document.querySelectorAll('input[type="radio"]');
+                radioInputs.forEach(input => {
+                    input.addEventListener('change', () => {
+
+                        // Remove bg-secondary from all question labels
+                        const questionLabels = document.querySelectorAll('.question');
+                        questionLabels.forEach(label => {
+                            label.classList.remove('bg-secondary')
+                        })
+
+                        // Add bg-secondary to the selected question label
+                        input.parentElement.classList.add('bg-secondary')
+        
+                        // Change the selected questionId
+                        selectedQuestionId = input.value
+                    })
+                })
+                
+            }
+
+            // Run on page load
+            getQuestions()
+
+
+            async function selectQuestion () {
+                const response = await fetch(`/func/change-state?state=GUESS&questionId=${ selectedQuestionId }`)
+            }
+        </script>
+ 
+        <!-- Question control buttons -->
+        <div class="flex justify-center gap-3 m-3">
+            <button id="buttonSelectQuestion" onclick="selectQuestion()" type="button" class="border-2 bg-green-500 border-green-500 hover:bg-primary p-3 w-full rounded-md font-semibold">Zvolit</button>
+            <button id="buttonGetQuestions" onclick="getQuestions()" type="button" class="border-2 border-red-500 bg-red-500 hover:bg-primary p-3 w-full rounded-md font-semibold">Aktualizovat</button>            
+        </div>
+
+        <div id="allQuestion" style="height: 80vh;" class="col-span-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+            
+            <!-- Show loading -->
+            <div class="flex justify-center w-full h-full items-center rounded-lg">
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+                    <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Načítání...</span>
+                </div>
+            </div>
+
+        </div>
+        
+    </div>
+
+
+    <div class="col-span-1 m-3">
+
+        <!-- Current state info -->
+        <div class="bg-secondary p-3 w-full rounded-md font-semibold text-center">
+            <h1 id="currentState" class="text-2xl"></h1>
+            <script>
+                document.getElementById("currentState").innerText = currentState
+            </script>
+
+            <p> Aktuální fáze </p>
+        </div>
+
+
+        <!-- Current question -->
+        <div id="currentQuestionDiv" class="mt-3 bg-secondary_dark p-3 rounded-lg">
+
+            <script>
+                async function getQuestion () {
+                    const response = await fetch("/func/get-question")
+                    const data = await response.json()
+
+            
+                    document.getElementById("currentQuestionText").innerText = data.text
+                    for (let x = 0; x < data["answers"].length; x++) {
+                        document.getElementById(`currentQuestionAnswer${data["answers"][x].type}`).innerHTML = `
+                            <span class="text-xl">
+                                <span class="font-bold ${ (data.correctAnswerId == data["answers"][x].answerId) ? "text-green-500" : "text-red-500" }">${data["answers"][x].type}</span>
+                                ${data["answers"][x].text}
+                            </span>
+                        `
+                    }
+                }
+            </script>
+            
+
+            <h1 class="text-2xl text-center font-semibold uppercase">Aktuální otázka</h1>
+
+            <h1 id="currentQuestionText" class="mt-5 text-2xl text-center font-semibold"></h1>
+
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div id="currentQuestionAnswerA" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary p-3 w-full rounded-md font-semibold">
+                    <span class="text-xl">
+                        <span class="font-bold text-red-500">A</span>                    
+                    </span>
+                </div>  
+
+                <div id="currentQuestionAnswerB" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary p-3 w-full rounded-md font-semibold">               
+                    <span class="text-xl">
+                        <span class="font-bold text-red-500">B</span>                    
+                    </span>     
+                </div>  
+
+                <div id="currentQuestionAnswerC" class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary p-3 w-full rounded-md font-semibold">
+                    <span class="text-xl">
+                        <span class="font-bold text-red-500">C</span>                    
+                    </span>
+                </div>  
+
+                <div class="col-span-1 items-center text-left gap-x-2 border-2 border-secondary bg-secondary p-3 w-full rounded-md font-semibold">
+                    <span class="text-xl">
+                        <span class="font-bold text-red-500">D</span>
+                        Nechci odpovídat
+                    </span>
+                </div>  
+
+            </div>
+        </div>
+
+
+        <!-- Player answer statuses -->
+        <div id="currentAnswersDiv" class="mt-3 bg-secondary_dark p-3 rounded-lg">
+            <h1 class="text-2xl text-center font-semibold uppercase">Odpovědi</h1>
+
+            <div class="flex justify-center gap-3 mt-3">
+
+                <script>
+                    async function showAnswer (role) {
+                        const response = await fetch(`/func/socket-show-answer?role=${role}`)                 
+                    }
+                </script>
+            
+            
+                <button id="buttonAnswerPlayer" onclick="showAnswer('player')" type="button" class="flex items-center gap-x-2 border-2 border-secondary bg-secondary hover:bg-secondary_dark p-3 w-full rounded-md font-semibold">
+                    <span id="badgePlayer" class="size-3 inline-block rounded-full bg-red-500"></span>
+    
+                    <span class="text-xl">Hráč <span class="font-thin">| {% for player in players %} {% if player.role == "player" %} {{ player.name }} {% endif %} {% endfor %}</span> <span id="answerPlayer" class="text-yellow-500"></span></span>
+                </button>  
+                <button id="buttonAnswerChaser" onclick="showAnswer('chaser')" type="button" class="flex items-center gap-x-2 border-2 border-secondary bg-secondary hover:bg-secondary_dark p-3 w-full rounded-md font-semibold">
+                    <span id="badgeChaser" class="size-3 inline-block rounded-full bg-red-500"></span>
+    
+                    <span class="text-xl">Lovec <span class="font-thin">| {% for player in players %} {% if player.role == "chaser" %} {{ player.name }} {% endif %} {% endfor %}</span> <span id="answerChaser" class="text-yellow-500"></span></span>
+                </button> 
+                <button id="buttonAnswerCorrect" onclick="showAnswer('correct')" type="button" class="flex items-center gap-x-2 border-2 border-secondary bg-secondary hover:bg-secondary_dark p-3 w-full rounded-md font-semibold">
+                    <span id="badgeChaser" class="size-3 inline-block rounded-full bg-green-500"></span>
+    
+                    <span class="text-xl">Správná odpověď</span></span>
+                </button>            
+    
+                
+            </div>
+        </div>
+
+
+        <!-- Control button -->
+        <div class="flex justify-center gap-3 mt-3">
+            <script>
+                async function guessStart () {
+                    const response = await fetch(`/func/socket-guess-start`)                 
+                }
+
+                async function newRound () {
+                    const response = await fetch(`/func/change-state?state=END&questionId=${ selectedQuestionId }`)                 
+                }
+
+                async function reloadScreens () {
+                    const response = await fetch(`/func/socket-reload-screens`)                 
+                }
+
+                async function clearSession () {
+                    const response = await fetch(`/func/clear-session`)            
+                    location.reload()                         
+                }
+            </script>
+
+            <button id="buttonGuessStart" onclick="guessStart()" type="button" class="border-2 border-yellow-500 bg-yellow-500 hover:bg-primary p-3 w-full rounded-md font-semibold">Sběr Odpovědí</button>            
+            <button id="buttonNewRound" onclick="newRound()" type="button" class="border-2 border-red-500 bg-red-500 hover:bg-primary p-3 w-full rounded-md font-semibold">Nové Kolo</button>            
+        </div>
+
+        <div class="mt-10">
+            <button id="buttonReloadScreens" onclick="confirm('Opravdu chcete refreshnout všechny obrazovky?') ? reloadScreens() : function(){}" type="button" class="border-2 border-secondary bg-secondary hover:bg-primary p-3 w-full rounded-md font-semibold">Refresh Obrazovek</button>            
+        </div>
+
+        <div class="mt-3">
+            <button id="buttonClearSession" onclick="confirm('Opravdu chcete zahájit novou session?') ? clearSession() : function(){}" type="button" class="border-2 border-secondary bg-secondary hover:bg-primary p-3 w-full rounded-md font-semibold">Nová Session</button>            
+        </div>
+        
+
+    </div>
+</div>
+
+
+<script>
+    function enableDisableButtonsByState () {
+
+        controlButtons = [
+            "buttonSelectQuestion",
+            "buttonGetQuestions",
+            "buttonAnswerPlayer",
+            "buttonAnswerChaser",
+            "buttonAnswerCorrect",
+            "buttonGuessStart",
+            "buttonNewRound",
+            "buttonClearSession"
+        ]
+
+        controlButtons.forEach(button => {            
+            document.getElementById(button).disabled = true                        
+        })
+                
+
+        if (currentState == "INTRO") {
+            document.getElementById("buttonSelectQuestion").disabled = false
+            document.getElementById("buttonGetQuestions").disabled = false 
+            document.getElementById("buttonClearSession").disabled = false   
+        }
+
+        if (currentState == "GUESS") {
+            document.getElementById("buttonGuessStart").disabled = false
+        }
+        
+        if (currentState == "SHOW") {
+            document.getElementById("buttonAnswerPlayer").disabled = false
+            document.getElementById("buttonAnswerChaser").disabled = false            
+            document.getElementById("buttonAnswerCorrect").disabled = false            
+            document.getElementById("buttonNewRound").disabled = false            
+        }
+    }
+    enableDisableButtonsByState()
+</script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const host = window.location.host
+    
+    let protocol = `ws://`
+    if (window.location.protocol === "https:") {
+        protocol = `wss://`
+    }
+
+    const socket = io(`${protocol}${host}`)
+    
+    // Listen for messages from the server
+    socket.on('INTRO', (message) => {
+        currentState = "INTRO"
+        document.getElementById("currentState").innerText = currentState
+        enableDisableButtonsByState()
+
+        getQuestions()
+    })
+
+    socket.on('GUESS', (message) => {
+        currentState = "GUESS"
+        document.getElementById("currentState").innerText = currentState
+        enableDisableButtonsByState()
+
+        getQuestion()
+    })
+
+    
+    socket.on('guessStart', (message) => {
+        document.getElementById("buttonGuessStart").disabled = true
+
+        // Countdown - Set state to show
+        let count = 1
+        let intervalId    
+        intervalId = setInterval(
+            (e) => {
+                count++
+                if (count > "{{ config.answerTime }}") {                    
+                    clearInterval(intervalId)                    
+                    fetch(`/func/change-state?state=SHOW&questionId=${ selectedQuestionId }`)
+                }
+            }, 1000
+        )
+            
+    })
+
+    socket.on('SHOW', (message) => {
+        currentState = "SHOW"
+        document.getElementById("currentState").innerText = currentState  
+        enableDisableButtonsByState()      
+    })
+
+
+    socket.on('END', async (message) => {
+        currentState = "END"
+        document.getElementById("currentState").innerText = currentState
+        enableDisableButtonsByState()
+
+        // Clear badges & answers
+        document.getElementById("badgeChaser").classList.add("bg-red-500")
+        document.getElementById("badgeChaser").classList.remove("bg-green-500")
+        document.getElementById("answerChaser").innerText = ""
+
+        document.getElementById("badgePlayer").classList.add("bg-red-500")
+        document.getElementById("badgePlayer").classList.remove("bg-green-500")
+        document.getElementById("answerPlayer").innerText = ""
+
+
+        // Clear current question
+        document.getElementById("currentQuestionText").innerText = ""      
+        let answersLetters = ["A", "B", "C"]
+        for (let x = 0; x < 3; x++) {
+            document.getElementById(`currentQuestionAnswer${answersLetters[x]}`).innerHTML = `
+                <span class="text-xl">
+                    <span class="font-bold text-red-500">${answersLetters[x]}</span>                    
+                </span>
+            `
+        }
+        
+        // Change state to INTRO
+        const response = await fetch(`/func/change-state?state=INTRO&questionId=0`)                 
+    })
+
+
+    // Badges
+    socket.on('answered-player', (message) => {        
+        document.getElementById("badgePlayer").classList.remove("bg-red-500")
+        document.getElementById("badgePlayer").classList.add("bg-green-500")
+        document.getElementById("answerPlayer").innerText = `(${JSON.parse(message.data).pickedAnswer})`
+    })
+
+    socket.on('answered-chaser', (message) => {
+        document.getElementById("badgeChaser").classList.remove("bg-red-500")
+        document.getElementById("badgeChaser").classList.add("bg-green-500")
+        document.getElementById("answerChaser").innerText = `(${JSON.parse(message.data).pickedAnswer})`
+    })
+
+
+    // Reload
+    socket.on('reloadScreens', (message) => {
+        location.reload()
+    })
+
+
+    // Error
+    socket.on('connect_error', (error) => {
+        console.error('Socket.io connection error:', error)
+        alert('Socket.io connection error')
+    })
+</script>
+
+{% endblock %}

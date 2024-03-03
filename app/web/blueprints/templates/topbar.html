@@ -1,0 +1,51 @@
+<!--
+********************************************************
+
+    Tento kód je součástí projektu 'Na Lovu'.
+
+    Gymnázium Sokolov a Krajské vzdělávací centrum,
+    příspěvková organizace
+
+    Robin Míček, 8.E
+
+********************************************************
+-->
+
+
+<!-- Usage 
+with screenName=""
+    include 'topbar.html'
+endwith -->
+
+<div class="absolute top-0 left-0 z-10 p-3 bg-secondary w-full">
+
+    <div class="grid grid-cols-5 w-full">  
+
+        <div class="col-span-2">
+            <div class="flex justify-start items-center">
+                {% if linkHome == "True" %}
+                    <a href="/">
+                        <i class="las la-home text-white text-4xl"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-span-1 text-center">
+            <h1 class="text-4xl font-bold">Na Lovu</h1>
+        </div>
+
+        <div class="col-span-2 ">    
+            <div class="flex justify-end items-center">
+                {% if screenName != "" %}
+                    <h1 class="text-lg xl:text-2xl font-bold mr-10 uppercase">{{ screenName }}</h1>   
+
+                    <button onclick="location.reload()" class="mr-5">
+                        <i class="las la-redo-alt text-white text-4xl"></i>
+                    </button>            
+                {% endif %}
+            </div>
+        </div>
+    
+    </div>
+</div>

@@ -1,0 +1,51 @@
+<!--
+********************************************************
+
+    Tento kód je součástí projektu 'Na Lovu'.
+
+    Gymnázium Sokolov a Krajské vzdělávací centrum,
+    příspěvková organizace
+
+    Robin Míček, 8.E
+
+********************************************************
+-->
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Top Bar -->
+{% with screenName="Výběr role" %}
+    {% include 'topbar.html' %}
+{% endwith %}
+
+
+<div class="flex flex-col h-screen w-screen justify-center items-center">
+
+    <form method="POST" class="flex flex-col gap-y-10 w-96">
+
+        <div>
+            <h1 class="mb-1 font-semibold">Jméno</h1>
+            <input type="text" name="name" placeholder="Jan Novák" autocomplete="off" class="appearance-none border-2 bg-primary border-secondary p-3 w-full rounded-md font-semibold" required>
+        </div>
+
+        <div>
+            <h1 class="mb-1 font-semibold">Role</h1>
+            <select name="role" class="appearance-none border-2 bg-primary border-secondary p-3 w-full rounded-md font-semibold" required>
+                <option value="player" selected>Hráč</option>
+                <option value="chaser">Lovec</option>
+            </select>
+        </div>
+        
+
+        <button type="submit" class="border-2 bg-secondary border-secondary hover:bg-primary p-3 w-full rounded-md font-semibold">Pokračovat</button>
+
+    </form>
+    
+
+</div>
+
+
+{% endblock %}

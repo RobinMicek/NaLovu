@@ -1,0 +1,78 @@
+<!--
+********************************************************
+
+    Tento kód je součástí projektu 'K Okénku',
+    který je psán jako maturitní práce z informatiky.
+
+    Gymnázium Sokolov a Krajské vzdělávací centrum,
+    příspěvková organizace
+
+    Robin Míček, 8.E
+
+********************************************************
+-->
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Top Bar -->
+{% with screenName="Výběr obrazovky" %}
+    {% include 'topbar.html' %}
+{% endwith %}
+
+
+<div class="flex items-center justify-center h-full md:h-screen md:w-screen">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+
+        <a href="/screens/admin">
+            <div class="col-span-1 h-48 w-48 bg-white rounded-lg shadow-lg">
+                <div class="flex flex-col items-center justify-center w-full h-full">
+                    
+                    <i class="las la-tools text-primary text-8xl"></i>
+                    <h1 class="text-lg text-primary font-medium">Admin</h1>
+
+                </div>
+            </div>
+        </a>
+
+        <a href="/screens/player/config">
+            <div class="col-span-1 h-48 w-48 bg-white rounded-lg shadow-lg">
+                <div class="flex flex-col items-center justify-center w-full h-full">
+                    
+                    <i class="las la-user text-primary text-8xl"></i>
+                    <h1 class="text-lg text-primary font-medium">Hráč / Lovec</h1>
+
+                </div>
+            </div>
+        </a>
+        
+        <a href="/screens/stream">
+            <div class="col-span-1 h-48 w-48 bg-white rounded-lg shadow-lg">
+                <div class="flex flex-col items-center justify-center w-full h-full">
+                    
+                    <i class="las la-video text-primary text-8xl"></i>
+                    <h1 class="text-lg text-primary font-medium">Divák</h1>
+
+                </div>                    
+            </div>
+        </a>
+
+        <a href="/screens/questions">
+            <div class="col-span-1 h-48 w-48 bg-white rounded-lg shadow-lg">
+                <div class="flex flex-col items-center justify-center w-full h-full">
+                    
+                    <i class="las la-question text-primary text-8xl"></i>
+                    <h1 class="text-lg text-primary font-medium">Otázky</h1>
+
+                </div>                    
+            </div>
+        </a>
+    </div>
+
+</div>
+
+
+{% endblock %}
