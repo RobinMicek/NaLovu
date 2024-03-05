@@ -44,17 +44,17 @@
     <div class="grid grid-cols-3 rounded-t-md bg-yellow-500 w-full py-2 px-4">
         
         <div class="col-span-1 text-left">
-            <h1 class="text-2xl font-bold">{% for player in players %} {% if player.role == "player" %} {{ player.name }} {% endif %} {% endfor %}</h1>
-            <h2 class="font-semibold">Hráč</h2>          
+            <h1 class="text-4xl font-bold">{% for player in players %} {% if player.role == "player" %} {{ player.name }} {% endif %} {% endfor %}</h1>
+            <h2 class="text-2xl font-semibold">Hráč</h2>          
         </div>
         
         <div class="col-span-1">
-            <h1 class="p-1 text-4xl text-center font-bold">Na Lovu</h1>
+            <h1 class="p-1 text-6xl text-center font-bold">Na Lovu</h1>
         </div>
 
         <div class="col-span-1 text-right">
-            <h1 class="text-2xl font-bold">{% for player in players %} {% if player.role == "chaser" %} {{ player.name }} {% endif %} {% endfor %}</h1>
-            <h2 class="font-semibold">Lovec</h2>
+            <h1 class="text-4xl font-bold">{% for player in players %} {% if player.role == "chaser" %} {{ player.name }} {% endif %} {% endfor %}</h1>
+            <h2 class="text-2xl font-semibold">Lovec</h2>
         </div>
     </div>
 
